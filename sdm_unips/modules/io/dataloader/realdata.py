@@ -60,8 +60,7 @@ class dataloader():
         for i, indexofimage in enumerate(indexset):
             img_path = directlist[indexofimage]
             mask_path = img_dir + '/mask.png'
-            img = cv2.cvtColor(cv2.imread(img_path, flags = cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH), cv2.COLOR_BGR2RGB)
-
+            img = cv2.cvtColor(cv2.imread(img_path, flags = cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH | cv2.IMREAD_UNCHANGED), cv2.COLOR_BGR2RGB)
             if i == 0:
                 h0 = img.shape[0]
                 w0 = img.shape[1]

@@ -142,41 +142,45 @@ class builder():
                 if 'normal' in self.args.target:
                     nml = nml.cpu().numpy()                
                     nml = cv2.resize(nml, dsize=(c_e-c_s, r_e-r_s), interpolation=cv2.INTER_CUBIC)
-                    mask = np.float32(np.abs(1 - np.sqrt(np.sum(nml * nml, axis=2))) < 0.5)
+                    mask = np.float64(np.abs(1 - np.sqrt(np.sum(nml * nml, axis=2))) < 0.5)
                     nml = np.divide(nml, np.linalg.norm(nml, axis=2, keepdims=True) + 1.0e-12)
                     nml = nml * mask[:, :, np.newaxis]
-                    nout = np.zeros((h_, w_, 3), np.float32)
+                    nout = np.zeros((h_, w_, 3), np.float64)
                     nout[r_s:r_e, c_s:c_e,:] = nml
 
                     if torch.sum(N) > 0:
                         n_true = N.permute(0,2,3,1).squeeze().cpu().numpy()
-                        mask = np.float32(np.abs(1 - np.sqrt(np.sum(n_true * n_true, axis=2))) < 0.5)
+                        mask = np.float64(np.abs(1 - np.sqrt(np.sum(n_true * n_true, axis=2))) < 0.5)
                         mae, emap = compute_mae.compute_mae_np(nout, n_true, mask = mask)
                         print(f"Mean Angular Error (MAE) is {mae:.3f}\n")                        
                         emap = emap.squeeze()
                         thresh = 90
                         emap[emap>=thresh] = thresh
                         emap = emap/thresh
-                        cv2.imwrite(f'{testdata.data.data_workspace}/error.png', 255*emap)     
+                        cv2.imwrite(f'{testdata.data.data_workspace}/error.png', 255*emap, [cv2.IMWRITE_PNG_COMPRESSION, 0])     
                     
-                    cv2.imwrite(f'{testdata.data.data_workspace}/normal.png', 255*(0.5 * (1+nout[:,:,::-1])))                                      
+                    nout_16bits = np.uint16(np.clip(65535*(0.5 * (1+nout[:,:,::-1])), 0, 65535))
+                    cv2.imwrite(f'{testdata.data.data_workspace}/normal.png', nout_16bits, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
                 if 'brdf' in self.args.target:
                     base = cv2.resize(base.cpu().numpy(), dsize=(c_e-c_s, r_e-r_s), interpolation=cv2.INTER_CUBIC)
                     rough = cv2.resize(rough.cpu().numpy(), dsize=(c_e-c_s, r_e-r_s), interpolation=cv2.INTER_CUBIC)
                     metal = cv2.resize(metal.cpu().numpy(), dsize=(c_e-c_s, r_e-r_s), interpolation=cv2.INTER_CUBIC)
 
-                    bout = np.zeros((h_, w_, 3), np.float32)
+                    bout = np.zeros((h_, w_, 3), np.float64)
                     bout[r_s:r_e, c_s:c_e,:] = base
-                    cv2.imwrite(f'{testdata.data.data_workspace}/baseColor.png', 255*bout[:,:,::-1])
+                    bout_16bits = np.uint16(np.clip(65535*bout[:,:,::-1], 0, 65535))
+                    cv2.imwrite(f'{testdata.data.data_workspace}/baseColor.png', bout_16bits, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
-                    rout = np.zeros((h_, w_), np.float32)
+                    rout = np.zeros((h_, w_), np.float64)
                     rout[r_s:r_e, c_s:c_e] = rough
-                    cv2.imwrite(f'{testdata.data.data_workspace}/roughness.png', 255*rout[:,:])
+                    rout_16bits = np.uint16(np.clip(65535*rout[:,:], 0, 65535))
+                    cv2.imwrite(f'{testdata.data.data_workspace}/roughness.png', rout_16bits, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
-                    mout = np.zeros((h_, w_), np.float32)
+                    mout = np.zeros((h_, w_), np.float64)
                     mout[r_s:r_e, c_s:c_e] = metal
-                    cv2.imwrite(f'{testdata.data.data_workspace}/metallic.png', 255*mout[:,:])
+                    mout_16bits = np.uint16(np.clip(65535*mout[:,:], 0, 65535))
+                    cv2.imwrite(f'{testdata.data.data_workspace}/metallic.png', mout_16bits, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
              
 
